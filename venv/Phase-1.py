@@ -3,6 +3,67 @@ import numpy as np
 import matplotlib.pyplot as plt
 import urllib.request
 
+# Input: sudoku grid ( 9 * 9 list )
+# function to print sudoku grid
+def print_sudoku_grid(sudoku_grid):
+    for i in range(9):
+        if i % 3 == 0 and i != 0:
+            print("-"*21)
+        for j in range(9):
+            if j % 3 == 0 and j != 0:
+                print("|", end=" ")
+            print(sudoku_grid[i][j], end=" ")
+        print()
+
+# Output: templates of digits to match
+# function to create digit templates in order to match them with grid
+def create_digit_templates():
+    digit_templates = []
+    for i in range(1, 10):
+        template = np.zeros((40, 40), dtype=np.uint8)
+        cv2.putText(template, str(i), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2)
+        digit_templates.append(template)
+
+    return digit_templates
+
+# Input: boxes (a list of cells image) - digit_templates (templates of digits to match) - min_confidence (minimum confidence in matching)
+# Output: a 9 * 9 list of exctracted numbers from input images
+# function to match cells images with templates
+def extract_numbers(boxes, digit_templates, min_confidence=0.7):
+    extracted_numbers = []
+
+    for box_row in range(9):
+        row_numbers = []
+        for box_col in range(9):
+            box = boxes[box_row * 9 + box_col]
+            if np.sum(box > 200) > box.size * 0.1:
+                detected_digit = None
+                max_confidence = -1
+
+                for i, template in enumerate(digit_templates):
+                    result = cv2.matchTemplate(box, template, cv2.TM_CCOEFF_NORMED)
+                    _, confidence, _, _ = cv2.minMaxLoc(result)
+
+                    # Normalize confidence to the range [0, 1]
+                    confidence = (confidence + 1) / 2
+
+                    if confidence > max_confidence:
+                        max_confidence = confidence
+                        detected_digit = i + 1
+
+                if max_confidence >= min_confidence:
+                    row_numbers.append(detected_digit)
+                else:
+                    row_numbers.append(0)  # Use 0 to represent empty cells
+            else:
+                row_numbers.append(0)
+
+        extracted_numbers.append(row_numbers)
+
+    return extracted_numbers
+
+
+
 # Input: corners of grid
 # Output: list of ordered corners
 # function to sort the detected corners of the grid in the correct order
@@ -85,6 +146,7 @@ if filtered_contours:
 
     # Create an array to store the combined cells image
     combined_cells_image = np.ones((450 + 8 * cell_border_size, 450 + 8 * cell_border_size), dtype=np.uint8) * 255
+    boxes = []
 
     for row in range(9):
         for col in range(9):
@@ -98,6 +160,7 @@ if filtered_contours:
 
             combined_cells_image[y_offset:y_offset + cell_size,
             x_offset:x_offset + cell_size] = cell_content
+            boxes.append(cell_content)
 
     plt.figure(figsize=(15, 10))
 
@@ -112,5 +175,9 @@ if filtered_contours:
     plt.axis('off')
 
     plt.show()
+
+    digit_templates = create_digit_templates()
+    numbers = extract_numbers(boxes, digit_templates)
+    print_sudoku_grid(numbers)
 else:
     print("No Sudoku grid detected.")
