@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import urllib.request
 
+M = 9
+
 # Input: sudoku grid ( 9 * 9 list )
 # function to print sudoku grid
 def print_sudoku_grid(sudoku_grid):
@@ -15,16 +17,64 @@ def print_sudoku_grid(sudoku_grid):
             print(sudoku_grid[i][j], end=" ")
         print()
 
+
+# Input: sudoku grid - starting row - starting column
+# Output: returns boolean if sudoku is solvable
+# function to solve sudoku
+def solve(grid, row, col, num):
+    for x in range(9):
+        if grid[row][x] == num:
+            return False
+
+    for x in range(9):
+        if grid[x][col] == num:
+            return False
+
+    startRow = row - row % 3
+    startCol = col - col % 3
+    for i in range(3):
+        for j in range(3):
+            if grid[i + startRow][j + startCol] == num:
+                return False
+    return True
+
+
+# Input: sudoku grid - row - column
+# Output: returns boolean if sudoku is solvable
+# function to solve sudoku
+def Suduko(grid, row, col):
+    if (row == M - 1 and col == M):
+        return True
+    if col == M:
+        row += 1
+        col = 0
+    if grid[row][col] > 0:
+        return Suduko(grid, row, col + 1)
+    for num in range(1, M + 1, 1):
+
+        if solve(grid, row, col, num):
+
+            grid[row][col] = num
+            if Suduko(grid, row, col + 1):
+                return True
+        grid[row][col] = 0
+    return False
+
+
 # Output: templates of digits to match
 # function to create digit templates in order to match them with grid
 def create_digit_templates():
     digit_templates = []
     for i in range(1, 10):
         template = np.zeros((40, 40), dtype=np.uint8)
-        cv2.putText(template, str(i), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2)
+        if i != 3:
+            cv2.putText(template, str(i), (10, 30), cv2.FONT_HERSHEY_DUPLEX, 1, 255, 2)
+        else:
+            cv2.putText(template, str(i), (10, 30), cv2.FONT_HERSHEY_COMPLEX, 1, 255, 2)
         digit_templates.append(template)
 
     return digit_templates
+
 
 # Input: boxes (a list of cells image) - digit_templates (templates of digits to match) - min_confidence (minimum confidence in matching)
 # Output: a 9 * 9 list of exctracted numbers from input images
@@ -40,7 +90,12 @@ def extract_numbers(boxes, digit_templates, min_confidence=0.7):
                 detected_digit = None
                 max_confidence = -1
 
+                # Ensure that box and template have the same data type (np.uint8)
+                box = box.astype(np.uint8)
+
+
                 for i, template in enumerate(digit_templates):
+                    template = template.astype(np.uint8)  # Ensure template data type
                     result = cv2.matchTemplate(box, template, cv2.TM_CCOEFF_NORMED)
                     _, confidence, _, _ = cv2.minMaxLoc(result)
 
@@ -63,14 +118,11 @@ def extract_numbers(boxes, digit_templates, min_confidence=0.7):
     return extracted_numbers
 
 
-
 # Input: corners of grid
 # Output: list of ordered corners
 # function to sort the detected corners of the grid in the correct order
 def reorder_corners(points):
-    print("Original points size:", points.shape)
     points = points.reshape((4, 2))
-    print("After points size:", points.shape)
     new_points = np.zeros((4, 1, 2), dtype=np.int32)
     add = points.sum(1)
     new_points[0] = points[np.argmin(add)]
@@ -80,15 +132,13 @@ def reorder_corners(points):
     new_points[1] = points[np.argmax(diff)]  # 1
     return new_points
 
-# test cases to work on: 3, 5, 8, 15, 16
-
 # Step 1: Input the image
-# in case of url
+# in case of url - uncomment the following lines
 # req = urllib.request.urlopen('https://live.staticflickr.com/8027/6978422072_33ac92fe1a_b.jpg')
 # arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
 # original_image = cv2.imdecode(arr, -1)  # 'Load it as it is'
 
-original_image = cv2.imread('test cases/03-WhereBorder.jpg')
+original_image = cv2.imread('test cases/08-MeshShayef7agaYa3am.jpg')
 
 # Step 2: Convert to grayscale
 gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
@@ -126,13 +176,12 @@ if filtered_contours:
 
         # Ensure corners has the correct shape (4, 1, 2)
         if corners.shape == (4, 1, 2):
+            # Sort the corners to make sure they are in the correct order for all images
             corners = reorder_corners(corners)
         else:
             print("Invalid shape of corners. Expected (4, 1, 2)")
     else:
         print("Insufficient number of points in corners")
-    # Sort the corners to make sure they are in the correct order for all images
-    # corners = reorder_corners(corners)
 
     # Step 6: Perform a perspective transform on the binary image
     pts1 = np.float32(corners)
@@ -176,8 +225,22 @@ if filtered_contours:
 
     plt.show()
 
+    # create the digit templates and match them with sudoku cells
     digit_templates = create_digit_templates()
     numbers = extract_numbers(boxes, digit_templates)
+    print("")
+    print("Detected Soduku Grid")
     print_sudoku_grid(numbers)
+
+    print("")
+    print("**************************************************************")
+    print("")
+
+    # Solve Sudoku
+    if (Suduko(numbers, 0, 0)):
+        print("Solved Sudoku Puzzle")
+        print_sudoku_grid(numbers)
+    else:
+        print("Sudoku grid not solvable. Check input again.")
 else:
     print("No Sudoku grid detected.")
