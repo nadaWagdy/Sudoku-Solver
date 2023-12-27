@@ -52,7 +52,10 @@ Sudoku puzzle solver
 ![Phase_2](https://github.com/nadaWagdy/Sudoku-Solver/blob/main/Phase_2.png?raw=true)
 
 **Detected Sudoku Grid**
+
 ![2_Detected_Grid](https://github.com/nadaWagdy/Sudoku-Solver/blob/main/2_Detected_Grid.png?raw=true)
 
+
 **Solved Sudoku Grid**
+
 ![2_Solved_Grid](https://github.com/nadaWagdy/Sudoku-Solver/blob/main/2_Solved_Grid.png?raw=true)
