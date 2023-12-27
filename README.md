@@ -32,3 +32,18 @@ Sudoku puzzle solver
 
 ## Output of Phase one
 ![Phase_1](https://github.com/nadaWagdy/Sudoku-Solver/blob/main/Phase_1.png?raw=true)
+
+## Phase two done in the following steps
+**1. Create digits templates**
+- use numpy to create digit templates
+
+**2. Match extracted cells from phase one with templates**
+- compute confidence in matching and exctract accordingly
+
+**3. Extract the numbers**
+- extract numbers in a 9 * 9 list based on the confidence computed
+
+**4. Check if sudoku is solvable**
+
+**5. Solve Sudoku Grid**
+- solve sudoku puzzle if it is proved to be solvable then output the solved grid
