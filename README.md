@@ -23,3 +23,6 @@ Sudoku puzzle solver
 - warp perspective
 **7. Separate the number tiles**
 - obtain a list of images of the sudoku cells to apply OCR in phase 2
+
+## Output of Phase one
+![Phase_1](https://github.com/nadaWagdy/Sudoku-Solver/blob/main/Phase_1.png?raw=true)
